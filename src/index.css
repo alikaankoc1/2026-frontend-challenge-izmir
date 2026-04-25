@@ -1,0 +1,7 @@
+@import 'tailwindcss';
+
+/* Keep a stable dark canvas for the detective interface. */
+body {
+  margin: 0;
+  background: #020617;
+}

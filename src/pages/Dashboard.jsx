@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { FORM_IDS, getSubmissions } from '../services/jotformService'
 
-// Normalize Checkins form answers into a table row.
+// Normalize Checkins form answers into a list row.
 function mapCheckinAnswerToRow(answers, index) {
   const answerList = Object.values(answers ?? {})
   const byFieldName = Object.fromEntries(
@@ -51,46 +51,53 @@ function Dashboard() {
   )
 
   if (loading) {
-    return <p>Loading check-in data...</p>
+    return (
+      <section className="rounded-xl border border-emerald-500/30 bg-slate-900/80 p-6 shadow-xl shadow-black/40">
+        <p className="text-emerald-300">Loading check-in data...</p>
+      </section>
+    )
   }
 
   if (error) {
-    return <p>{error}</p>
+    return (
+      <section className="rounded-xl border border-rose-500/30 bg-slate-900/80 p-6 shadow-xl shadow-black/40">
+        <p className="text-rose-300">{error}</p>
+      </section>
+    )
   }
 
   return (
-    <section>
-      <h2>Check-ins in Izmir</h2>
-      <p>Total entries: {izmirCheckins.length}</p>
-      <table>
-        <thead>
-          <tr>
-            <th>#</th>
-            <th>Name</th>
-            <th>Location</th>
-            <th>Coordinates</th>
-            <th>Check-in Time</th>
-            <th>Note</th>
-          </tr>
-        </thead>
-        <tbody>
-          {izmirCheckins.length === 0 && (
-            <tr>
-              <td colSpan={6}>No Izmir check-ins found yet.</td>
-            </tr>
-          )}
+    <section className="rounded-xl border border-amber-400/25 bg-slate-900/80 p-6 shadow-2xl shadow-black/50">
+      <div className="mb-5 flex items-center justify-between gap-4 border-b border-slate-700 pb-4">
+        <h2 className="text-2xl font-semibold text-amber-300">İzmir Partisi Giriş Kayıtları</h2>
+        <span className="rounded-md border border-emerald-400/30 bg-emerald-400/10 px-3 py-1 text-sm text-emerald-300">
+          Total: {izmirCheckins.length}
+        </span>
+      </div>
+
+      {izmirCheckins.length === 0 ? (
+        <p className="text-slate-300">No Izmir check-ins found yet.</p>
+      ) : (
+        <ul className="space-y-3">
           {izmirCheckins.map((row) => (
-            <tr key={row.id}>
-              <td>{row.id}</td>
-              <td>{row.name}</td>
-              <td>{row.location}</td>
-              <td>{row.coordinates}</td>
-              <td>{row.checkinTime}</td>
-              <td>{row.note}</td>
-            </tr>
+            <li
+              key={row.id}
+              className="rounded-lg border border-slate-700 bg-slate-800/70 p-4 transition hover:border-amber-300/40"
+            >
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <p className="text-lg font-medium text-amber-200">{row.name}</p>
+                <p className="text-sm text-emerald-300">{row.checkinTime}</p>
+              </div>
+              <p className="mt-2 text-sm text-slate-300">
+                <span className="text-slate-400">Location:</span> {row.location}
+              </p>
+              <p className="mt-1 text-sm text-slate-300">
+                <span className="text-slate-400">Note:</span> {row.note || '-'}
+              </p>
+            </li>
           ))}
-        </tbody>
-      </table>
+        </ul>
+      )}
     </section>
   )
 }
