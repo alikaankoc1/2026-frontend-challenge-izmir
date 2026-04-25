@@ -14,6 +14,11 @@ function normalizeName(name) {
     .trim()
 }
 
+// Exclude the missing victim from suspect scoring.
+function isExcludedFromSuspects(normalizedName) {
+  return normalizedName === 'podo'
+}
+
 // Create a field map from Jotform answers.
 function toFieldMap(answers) {
   return Object.fromEntries(
@@ -40,6 +45,7 @@ function calculateScores({ messages, notes, sightings, tips }) {
     const fields = toFieldMap(answers)
     const name = String(fields.from?.answer ?? 'Unknown')
     const key = normalizeName(name)
+    if (isExcludedFromSuspects(key)) return
     if (!key) return
     const item = ensure(key, name)
     item.signals.messages += 1
@@ -50,6 +56,7 @@ function calculateScores({ messages, notes, sightings, tips }) {
     const fields = toFieldMap(answers)
     const name = String(fields.fullname?.answer ?? 'Unknown')
     const key = normalizeName(name)
+    if (isExcludedFromSuspects(key)) return
     if (!key) return
     const item = ensure(key, name)
     item.signals.notes += 1
@@ -60,6 +67,7 @@ function calculateScores({ messages, notes, sightings, tips }) {
     const fields = toFieldMap(answers)
     const name = String(fields.personname?.answer ?? 'Unknown')
     const key = normalizeName(name)
+    if (isExcludedFromSuspects(key)) return
     if (!key) return
     const item = ensure(key, name)
     item.signals.sightings += 1
@@ -70,6 +78,7 @@ function calculateScores({ messages, notes, sightings, tips }) {
     const fields = toFieldMap(answers)
     const name = String(fields.suspectname?.answer ?? 'Unknown')
     const key = normalizeName(name)
+    if (isExcludedFromSuspects(key)) return
     if (!key) return
     const item = ensure(key, name)
     const confidence = String(fields.confidence?.answer ?? 'low').toLocaleLowerCase('tr-TR')

@@ -60,6 +60,11 @@ function normalizeNameForKey(name) {
     .replace(/(.)\1+$/g, '$1')
 }
 
+// Exclude the missing victim from suspect ranking panels.
+function isExcludedFromSuspects(normalizedName) {
+  return normalizedName === 'podo'
+}
+
 // Format names in a consistent title-case style for UI.
 function formatDisplayName(name) {
   return String(name)
@@ -92,6 +97,7 @@ function buildSuspicionSignals({ messageAnswers, noteAnswers, sightingAnswers, t
   messageAnswers.forEach((answers) => {
     const fields = createAnswerMap(answers)
     const key = normalizeNameForKey(fields.from?.answer ?? '')
+    if (isExcludedFromSuspects(key)) return
     if (!key || key === 'unknown') return
     ensureSignal(key).messages += 1
   })
@@ -100,6 +106,7 @@ function buildSuspicionSignals({ messageAnswers, noteAnswers, sightingAnswers, t
   noteAnswers.forEach((answers) => {
     const fields = createAnswerMap(answers)
     const key = normalizeNameForKey(fields.fullname?.answer ?? '')
+    if (isExcludedFromSuspects(key)) return
     if (!key || key === 'unknown') return
     ensureSignal(key).notes += 1
   })
@@ -108,6 +115,7 @@ function buildSuspicionSignals({ messageAnswers, noteAnswers, sightingAnswers, t
   sightingAnswers.forEach((answers) => {
     const fields = createAnswerMap(answers)
     const key = normalizeNameForKey(fields.personname?.answer ?? '')
+    if (isExcludedFromSuspects(key)) return
     if (!key || key === 'unknown') return
     ensureSignal(key).sightings += 1
   })
@@ -116,6 +124,7 @@ function buildSuspicionSignals({ messageAnswers, noteAnswers, sightingAnswers, t
   tipAnswers.forEach((answers) => {
     const fields = createAnswerMap(answers)
     const key = normalizeNameForKey(fields.suspectname?.answer ?? '')
+    if (isExcludedFromSuspects(key)) return
     if (!key || key === 'unknown') return
 
     const confidence = String(fields.confidence?.answer ?? 'low').toLocaleLowerCase('tr-TR')
@@ -199,6 +208,7 @@ function Suspects({ searchTerm = '' }) {
         const merged = new Map()
         ;[...messageProfiles, ...noteProfiles].forEach((profile) => {
           const key = normalizeNameForKey(profile.name)
+          if (isExcludedFromSuspects(key)) return
           const existing = merged.get(key)
 
           if (!existing) {
