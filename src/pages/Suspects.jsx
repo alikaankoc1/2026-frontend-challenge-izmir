@@ -43,6 +43,9 @@ function getInitials(name) {
 function normalizeNameForKey(name) {
   return String(name)
     .toLocaleLowerCase('tr-TR')
+    // Unify Turkish dotless/dotted i variants before cleanup.
+    .replace(/ı/g, 'i')
+    .replace(/İ/g, 'i')
     .normalize('NFD')
     .replace(/[\u0300-\u036f]/g, '')
     .replace(/[^a-z0-9\s]/g, '')
