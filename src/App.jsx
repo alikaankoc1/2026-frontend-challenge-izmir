@@ -2,6 +2,7 @@ import Dashboard from './pages/Dashboard'
 import Sightings from './pages/Sightings'
 import Suspects from './pages/Suspects'
 import Tips from './pages/Tips'
+import PrimeSuspect from './pages/PrimeSuspect'
 import { useState } from 'react'
 import { NavLink, Navigate, Route, Routes } from 'react-router-dom'
 
@@ -36,6 +37,9 @@ function App() {
           <NavLink to="/tips" className={getNavClass}>
             Tips
           </NavLink>
+          <NavLink to="/prime-suspect" className={getNavClass}>
+            Prime Suspect
+          </NavLink>
         </nav>
 
         <div className="mb-6">
@@ -55,6 +59,10 @@ function App() {
           <Route path="/sightings" element={<Sightings searchTerm={searchTerm} />} />
           <Route path="/suspects" element={<Suspects searchTerm={searchTerm} />} />
           <Route path="/tips" element={<Tips searchTerm={searchTerm} />} />
+          <Route
+            path="/prime-suspect"
+            element={<PrimeSuspect searchTerm={searchTerm} />}
+          />
         </Routes>
       </div>
     </main>
