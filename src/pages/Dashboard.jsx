@@ -146,9 +146,10 @@ function Dashboard() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-700 bg-slate-900/50">
-                {izmirCheckins.map((row) => (
+                {izmirCheckins.map((row, index) => (
                   <tr key={row.id} className="transition hover:bg-slate-800/60">
-                    <td className="px-4 py-3 text-sm text-slate-300">{row.id}</td>
+                    {/* Render sequence based on filtered rows for a continuous 1..N index. */}
+                    <td className="px-4 py-3 text-sm text-slate-300">{index + 1}</td>
                     <td className="px-4 py-3 text-sm font-medium text-amber-200">{row.name}</td>
                     <td className="px-4 py-3 text-sm text-emerald-300">{row.checkinTime}</td>
                     <td className="px-4 py-3 text-sm text-slate-300">{row.note || '-'}</td>
