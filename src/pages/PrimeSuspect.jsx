@@ -311,7 +311,6 @@ function PrimeSuspect({ searchTerm = '' }) {
           </div>
         </div>
       )}
-      <p className="mt-4 text-xs text-slate-400">Next phase: add top-5 ranking and impact simulation.</p>
     </section>
   )
 }
