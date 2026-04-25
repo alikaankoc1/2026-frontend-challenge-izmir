@@ -64,6 +64,78 @@ function formatDisplayName(name) {
     .join(' ')
 }
 
+// Build suspicion signals from related forms for each suspect key.
+function buildSuspicionSignals({ messageAnswers, noteAnswers, sightingAnswers, tipAnswers }) {
+  const signals = new Map()
+
+  const ensureSignal = (key) => {
+    if (!signals.has(key)) {
+      signals.set(key, {
+        messages: 0,
+        notes: 0,
+        sightings: 0,
+        tipsLow: 0,
+        tipsMedium: 0,
+        tipsHigh: 0,
+      })
+    }
+    return signals.get(key)
+  }
+
+  // Count message participation by sender name.
+  messageAnswers.forEach((answers) => {
+    const fields = createAnswerMap(answers)
+    const key = normalizeNameForKey(fields.from?.answer ?? '')
+    if (!key || key === 'unknown') return
+    ensureSignal(key).messages += 1
+  })
+
+  // Count personal notes by full name.
+  noteAnswers.forEach((answers) => {
+    const fields = createAnswerMap(answers)
+    const key = normalizeNameForKey(fields.fullname?.answer ?? '')
+    if (!key || key === 'unknown') return
+    ensureSignal(key).notes += 1
+  })
+
+  // Count sightings by person name.
+  sightingAnswers.forEach((answers) => {
+    const fields = createAnswerMap(answers)
+    const key = normalizeNameForKey(fields.personname?.answer ?? '')
+    if (!key || key === 'unknown') return
+    ensureSignal(key).sightings += 1
+  })
+
+  // Weight anonymous tips by confidence level.
+  tipAnswers.forEach((answers) => {
+    const fields = createAnswerMap(answers)
+    const key = normalizeNameForKey(fields.suspectname?.answer ?? '')
+    if (!key || key === 'unknown') return
+
+    const confidence = String(fields.confidence?.answer ?? 'low').toLocaleLowerCase('tr-TR')
+    const signal = ensureSignal(key)
+
+    if (confidence === 'high') signal.tipsHigh += 1
+    else if (confidence === 'medium') signal.tipsMedium += 1
+    else signal.tipsLow += 1
+  })
+
+  return signals
+}
+
+// Convert signal counters into a readable score from 0 to 100.
+function calculateSuspicionScore(signal) {
+  const rawScore =
+    signal.messages * 8 +
+    signal.notes * 6 +
+    signal.sightings * 10 +
+    signal.tipsLow * 6 +
+    signal.tipsMedium * 12 +
+    signal.tipsHigh * 20
+
+  return Math.max(0, Math.min(100, rawScore))
+}
+
 // Render suspect cards sourced from real Jotform forms.
 function Suspects({ searchTerm = '' }) {
   const [suspects, setSuspects] = useState([])
@@ -74,15 +146,23 @@ function Suspects({ searchTerm = '' }) {
     // Fetch suspect-related records from Messages and Personal Notes.
     const loadSuspects = async () => {
       try {
-        const [messageAnswers, noteAnswers] = await Promise.all([
+        const [messageAnswers, noteAnswers, sightingAnswers, tipAnswers] = await Promise.all([
           getSubmissions(FORM_IDS.MESSAGES),
           getSubmissions(FORM_IDS.PERSONAL_NOTES),
+          getSubmissions(FORM_IDS.SIGHTINGS),
+          getSubmissions(FORM_IDS.ANONYMOUS_TIPS),
         ])
 
         const messageProfiles = messageAnswers.map((answers) =>
           mapToSuspectProfile(answers, 'messages'),
         )
         const noteProfiles = noteAnswers.map((answers) => mapToSuspectProfile(answers, 'notes'))
+        const suspicionSignals = buildSuspicionSignals({
+          messageAnswers,
+          noteAnswers,
+          sightingAnswers,
+          tipAnswers,
+        })
 
         // Merge duplicate names and keep the latest non-empty details.
         const merged = new Map()
@@ -115,10 +195,24 @@ function Suspects({ searchTerm = '' }) {
         })
 
         // Convert source sets to a stable joined label for rendering.
-        const normalizedSuspects = Array.from(merged.values()).map((item) => ({
-          ...item,
-          source: Array.from(item.sources).join(' + '),
-        }))
+        const normalizedSuspects = Array.from(merged.values()).map((item) => {
+          const key = normalizeNameForKey(item.name)
+          const signal = suspicionSignals.get(key) ?? {
+            messages: 0,
+            notes: 0,
+            sightings: 0,
+            tipsLow: 0,
+            tipsMedium: 0,
+            tipsHigh: 0,
+          }
+
+          return {
+            ...item,
+            source: Array.from(item.sources).join(' + '),
+            suspicionScore: calculateSuspicionScore(signal),
+            signalSummary: `M:${signal.messages} N:${signal.notes} S:${signal.sightings} T:${signal.tipsHigh + signal.tipsMedium + signal.tipsLow}`,
+          }
+        })
 
         setSuspects(normalizedSuspects)
       } catch (requestError) {
@@ -195,9 +289,19 @@ function Suspects({ searchTerm = '' }) {
                 </span>
               </div>
               <p className="mt-3 text-sm font-medium text-amber-200">{suspect.name}</p>
+              <div className="mt-2 inline-flex items-center gap-2 rounded-md border border-emerald-400/30 bg-emerald-400/10 px-2 py-1">
+                {/* Show weighted suspicion score computed from cross-form signals. */}
+                <span className="text-xs uppercase tracking-wider text-emerald-300">
+                  Suspicion Score
+                </span>
+                <span className="text-sm font-semibold text-emerald-200">
+                  {suspect.suspicionScore ?? 0}
+                </span>
+              </div>
               <p className="mt-1 text-xs text-slate-400">Last Seen: {suspect.timestamp}</p>
               <p className="mt-2 text-sm text-slate-300">{suspect.note}</p>
               <p className="mt-2 text-xs text-emerald-300">Source: {suspect.source}</p>
+              <p className="mt-1 text-xs text-slate-400">Signals: {suspect.signalSummary}</p>
             </article>
           ))}
         </div>
