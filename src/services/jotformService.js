@@ -5,6 +5,7 @@ export const FORM_IDS = {
   CHECKINS: '261134527667966',
   MESSAGES: '261133651963962',
   SIGHTINGS: '261133720555956',
+  PERSONAL_NOTES: '261134449238963',
 }
 
 // Create a single axios client for every Jotform request.
