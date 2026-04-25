@@ -39,6 +39,28 @@ function getInitials(name) {
     .join('')
 }
 
+// Normalize Turkish characters and letter repeats for stable name matching.
+function normalizeNameForKey(name) {
+  return String(name)
+    .toLocaleLowerCase('tr-TR')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9\s]/g, '')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .replace(/(.)\1+$/g, '$1')
+}
+
+// Format names in a consistent title-case style for UI.
+function formatDisplayName(name) {
+  return String(name)
+    .toLocaleLowerCase('tr-TR')
+    .split(' ')
+    .filter(Boolean)
+    .map((part) => part.charAt(0).toLocaleUpperCase('tr-TR') + part.slice(1))
+    .join(' ')
+}
+
 // Render suspect cards sourced from real Jotform forms.
 function Suspects() {
   const [suspects, setSuspects] = useState([])
@@ -62,26 +84,40 @@ function Suspects() {
         // Merge duplicate names and keep the latest non-empty details.
         const merged = new Map()
         ;[...messageProfiles, ...noteProfiles].forEach((profile) => {
-          const key = profile.name.toLocaleLowerCase('tr-TR')
+          const key = normalizeNameForKey(profile.name)
           const existing = merged.get(key)
 
           if (!existing) {
-            merged.set(key, profile)
+            merged.set(key, {
+              ...profile,
+              name: formatDisplayName(profile.name),
+              sources: new Set([profile.source]),
+            })
             return
           }
 
+          const sourceSet = new Set(existing.sources)
+          sourceSet.add(profile.source)
+
           merged.set(key, {
             ...existing,
+            name:
+              existing.name && existing.name !== 'Unknown'
+                ? existing.name
+                : formatDisplayName(profile.name),
             timestamp: profile.timestamp !== 'Unknown' ? profile.timestamp : existing.timestamp,
             note: profile.note !== '-' ? profile.note : existing.note,
-            source:
-              existing.source === profile.source
-                ? existing.source
-                : `${existing.source} + ${profile.source}`,
+            sources: sourceSet,
           })
         })
 
-        setSuspects(Array.from(merged.values()))
+        // Convert source sets to a stable joined label for rendering.
+        const normalizedSuspects = Array.from(merged.values()).map((item) => ({
+          ...item,
+          source: Array.from(item.sources).join(' + '),
+        }))
+
+        setSuspects(normalizedSuspects)
       } catch (requestError) {
         setError('Failed to load suspect profiles.')
         console.error('Suspects request failed:', requestError)
