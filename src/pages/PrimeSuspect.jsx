@@ -161,6 +161,7 @@ function PrimeSuspect({ searchTerm = '' }) {
 
   const topSuspect = visibleSuspects[0]
   const secondSuspect = visibleSuspects[1]
+  const topFive = visibleSuspects.slice(0, 5)
 
   if (loading) {
     return (
@@ -184,32 +185,52 @@ function PrimeSuspect({ searchTerm = '' }) {
       {!topSuspect ? (
         <p className="mt-3 text-slate-300">No suspect found for this search.</p>
       ) : (
-        <div className="mt-4 rounded-lg border border-red-300/30 bg-red-400/10 p-4">
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <div>
-              <p className="text-sm uppercase tracking-wider text-red-200">Top Candidate</p>
-              <p className="mt-1 text-2xl font-bold text-amber-200">{topSuspect.name}</p>
+        <div className="mt-4 space-y-4">
+          <div className="rounded-lg border border-red-300/30 bg-red-400/10 p-4">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div>
+                <p className="text-sm uppercase tracking-wider text-red-200">Top Candidate</p>
+                <p className="mt-1 text-2xl font-bold text-amber-200">{topSuspect.name}</p>
+              </div>
+              <div className="rounded-md border border-amber-300/40 bg-amber-300/10 px-3 py-2">
+                <p className="text-xs uppercase tracking-wider text-amber-100">Confidence</p>
+                <p className="text-xl font-semibold text-amber-200">
+                  {calculateConfidence(topSuspect.score, secondSuspect?.score)}%
+                </p>
+              </div>
             </div>
-            <div className="rounded-md border border-amber-300/40 bg-amber-300/10 px-3 py-2">
-              <p className="text-xs uppercase tracking-wider text-amber-100">Confidence</p>
-              <p className="text-xl font-semibold text-amber-200">
-                {calculateConfidence(topSuspect.score, secondSuspect?.score)}%
-              </p>
+
+            <p className="mt-2 text-sm text-slate-200">Suspicion Score: {topSuspect.score}</p>
+            <p className="mt-2 text-xs text-slate-300">
+              Signals - M:{topSuspect.signals.messages} N:{topSuspect.signals.notes} S:
+              {topSuspect.signals.sightings} T:
+              {topSuspect.signals.tipsHigh + topSuspect.signals.tipsMedium + topSuspect.signals.tipsLow}
+            </p>
+
+            <div className="mt-3">
+              <p className="text-xs uppercase tracking-wider text-slate-300">Why this suspect?</p>
+              <ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-slate-200">
+                {buildReasonBullets(topSuspect.signals).map((bullet) => (
+                  <li key={bullet}>{bullet}</li>
+                ))}
+              </ul>
             </div>
           </div>
 
-          <p className="mt-2 text-sm text-slate-200">Suspicion Score: {topSuspect.score}</p>
-          <p className="mt-2 text-xs text-slate-300">
-            Signals - M:{topSuspect.signals.messages} N:{topSuspect.signals.notes} S:
-            {topSuspect.signals.sightings} T:
-            {topSuspect.signals.tipsHigh + topSuspect.signals.tipsMedium + topSuspect.signals.tipsLow}
-          </p>
-
-          <div className="mt-3">
-            <p className="text-xs uppercase tracking-wider text-slate-300">Why this suspect?</p>
-            <ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-slate-200">
-              {buildReasonBullets(topSuspect.signals).map((bullet) => (
-                <li key={bullet}>{bullet}</li>
+          {/* Show top-5 ranking to compare leading suspects quickly. */}
+          <div className="rounded-lg border border-slate-700 bg-slate-800/70 p-4">
+            <p className="text-xs uppercase tracking-wider text-slate-300">Top 5 Ranking</p>
+            <ul className="mt-2 space-y-2">
+              {topFive.map((item, idx) => (
+                <li
+                  key={`${item.name}-${idx}`}
+                  className="flex items-center justify-between rounded border border-slate-700 bg-slate-900/50 px-3 py-2"
+                >
+                  <span className="text-sm text-slate-200">
+                    {idx + 1}. {item.name}
+                  </span>
+                  <span className="text-sm font-semibold text-amber-200">{item.score}</span>
+                </li>
               ))}
             </ul>
           </div>
