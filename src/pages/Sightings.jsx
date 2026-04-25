@@ -11,9 +11,21 @@ function mapSightingAnswerToRow(answers, index) {
   return {
     id: index + 1,
     location: String(byFieldName.location?.answer ?? 'Unknown'),
+    coordinates: String(byFieldName.coordinates?.answer ?? ''),
     timestamp: String(byFieldName.timestamp?.answer ?? 'Unknown'),
     note: String(byFieldName.note?.answer ?? '-'),
   }
+}
+
+// Parse "lat,lng" text into numeric coordinates.
+function parseCoordinates(value) {
+  const [latRaw, lngRaw] = String(value ?? '')
+    .split(',')
+    .map((item) => item.trim())
+  const lat = Number(latRaw)
+  const lng = Number(lngRaw)
+  if (Number.isNaN(lat) || Number.isNaN(lng)) return null
+  return { lat, lng }
 }
 
 // Render a dedicated Sightings page with real Jotform data.
@@ -52,6 +64,21 @@ function Sightings({ searchTerm = '' }) {
     )
   }, [sightings, searchTerm])
 
+  // Keep only sightings that have valid coordinates.
+  const sightingsWithCoords = useMemo(
+    () =>
+      visibleSightings
+        .map((item) => ({ ...item, parsedCoords: parseCoordinates(item.coordinates) }))
+        .filter((item) => item.parsedCoords),
+    [visibleSightings],
+  )
+
+  // Use latest available coordinates as the preview map target.
+  const previewCoords = sightingsWithCoords[0]?.parsedCoords
+  const mapEmbedUrl = previewCoords
+    ? `https://www.openstreetmap.org/export/embed.html?bbox=${previewCoords.lng - 0.01}%2C${previewCoords.lat - 0.01}%2C${previewCoords.lng + 0.01}%2C${previewCoords.lat + 0.01}&layer=mapnik&marker=${previewCoords.lat}%2C${previewCoords.lng}`
+    : ''
+
   if (loading) {
     return (
       <section className="rounded-xl border border-emerald-500/30 bg-slate-900/80 p-6 shadow-xl shadow-black/40">
@@ -80,21 +107,55 @@ function Sightings({ searchTerm = '' }) {
       {visibleSightings.length === 0 ? (
         <p className="text-slate-300">No sightings records found yet.</p>
       ) : (
-        <ul className="space-y-3">
-          {visibleSightings.map((item) => (
-            <li key={item.id} className="rounded-lg border border-slate-700 bg-slate-800/70 p-4">
-              <p className="text-sm text-slate-300">
-                <span className="text-slate-400">Görüldüğü Yer:</span> {item.location}
+        <div className="space-y-4">
+          {previewCoords && (
+            <div className="rounded-lg border border-slate-700 bg-slate-800/60 p-3">
+              <p className="mb-2 text-xs uppercase tracking-wider text-cyan-300">
+                Last Seen Location Map
               </p>
-              <p className="mt-1 text-sm text-emerald-300">
-                <span className="text-slate-400">Zaman:</span> {item.timestamp}
-              </p>
-              <p className="mt-1 text-sm text-slate-300">
-                <span className="text-slate-400">Tanım / Not:</span> {item.note}
-              </p>
-            </li>
-          ))}
-        </ul>
+              {/* Embed a quick map preview for the latest coordinate. */}
+              <iframe
+                title="Last seen map"
+                src={mapEmbedUrl}
+                className="h-56 w-full rounded border border-slate-700"
+                loading="lazy"
+              />
+            </div>
+          )}
+
+          <ul className="space-y-3">
+            {visibleSightings.map((item) => {
+              const parsed = parseCoordinates(item.coordinates)
+              const mapsUrl = parsed
+                ? `https://www.openstreetmap.org/?mlat=${parsed.lat}&mlon=${parsed.lng}#map=16/${parsed.lat}/${parsed.lng}`
+                : null
+
+              return (
+                <li key={item.id} className="rounded-lg border border-slate-700 bg-slate-800/70 p-4">
+                  <p className="text-sm text-slate-300">
+                    <span className="text-slate-400">Görüldüğü Yer:</span> {item.location}
+                  </p>
+                  <p className="mt-1 text-sm text-emerald-300">
+                    <span className="text-slate-400">Zaman:</span> {item.timestamp}
+                  </p>
+                  <p className="mt-1 text-sm text-slate-300">
+                    <span className="text-slate-400">Tanım / Not:</span> {item.note}
+                  </p>
+                  {mapsUrl && (
+                    <a
+                      href={mapsUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="mt-2 inline-block text-xs text-cyan-300 hover:text-cyan-200"
+                    >
+                      Open location on map
+                    </a>
+                  )}
+                </li>
+              )
+            })}
+          </ul>
+        </div>
       )}
     </section>
   )
