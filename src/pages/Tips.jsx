@@ -17,6 +17,36 @@ function mapTipAnswerToRow(answers, index) {
   }
 }
 
+// Normalize Turkish characters and trailing repeats for stable name matching.
+function normalizeNameForKey(name) {
+  return String(name)
+    .toLocaleLowerCase('tr-TR')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9\s]/g, '')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .replace(/(.)\1+$/g, '$1')
+}
+
+// Format suspect names in a consistent title-case style.
+function formatDisplayName(name) {
+  return String(name)
+    .toLocaleLowerCase('tr-TR')
+    .split(' ')
+    .filter(Boolean)
+    .map((part) => part.charAt(0).toLocaleUpperCase('tr-TR') + part.slice(1))
+    .join(' ')
+}
+
+// Pick the stronger confidence level when merging duplicate suspects.
+function pickHigherConfidence(a, b) {
+  const rank = { low: 1, medium: 2, high: 3 }
+  const safeA = String(a).toLocaleLowerCase('tr-TR')
+  const safeB = String(b).toLocaleLowerCase('tr-TR')
+  return (rank[safeB] ?? 0) >= (rank[safeA] ?? 0) ? b : a
+}
+
 // Render Anonymous Tips in the same visual language as other pages.
 function Tips() {
   const [tips, setTips] = useState([])
@@ -28,7 +58,40 @@ function Tips() {
     const loadTips = async () => {
       try {
         const answers = await getSubmissions(FORM_IDS.ANONYMOUS_TIPS)
-        setTips(answers.map(mapTipAnswerToRow))
+        const rows = answers.map(mapTipAnswerToRow)
+
+        // Merge duplicated suspect names after normalization.
+        const merged = new Map()
+        rows.forEach((row) => {
+          const key = normalizeNameForKey(row.suspectName)
+          const existing = merged.get(key)
+
+          if (!existing) {
+            merged.set(key, {
+              ...row,
+              suspectName: formatDisplayName(row.suspectName),
+            })
+            return
+          }
+
+          merged.set(key, {
+            ...existing,
+            suspectName:
+              existing.suspectName && existing.suspectName !== 'Unknown'
+                ? existing.suspectName
+                : formatDisplayName(row.suspectName),
+            // Keep richer values while combining duplicate tips.
+            location: row.location !== 'Unknown' ? row.location : existing.location,
+            timestamp: row.timestamp !== 'Unknown' ? row.timestamp : existing.timestamp,
+            tip:
+              row.tip && row.tip !== '-' && row.tip !== existing.tip
+                ? `${existing.tip} | ${row.tip}`
+                : existing.tip,
+            confidence: pickHigherConfidence(existing.confidence, row.confidence),
+          })
+        })
+
+        setTips(Array.from(merged.values()))
       } catch (requestError) {
         setError('Failed to load anonymous tips.')
         console.error('Anonymous tips request failed:', requestError)
@@ -40,8 +103,16 @@ function Tips() {
     loadTips()
   }, [])
 
-  // Keep newest-looking rows near the top by insertion order.
-  const orderedTips = useMemo(() => [...tips], [tips])
+  // Keep cards sorted alphabetically for easier scanning.
+  const orderedTips = useMemo(
+    () =>
+      [...tips].sort((a, b) =>
+        String(a.suspectName).localeCompare(String(b.suspectName), 'tr', {
+          sensitivity: 'base',
+        }),
+      ),
+    [tips],
+  )
 
   if (loading) {
     return (
