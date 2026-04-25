@@ -53,7 +53,22 @@ function Dashboard() {
   if (loading) {
     return (
       <section className="rounded-xl border border-emerald-500/30 bg-slate-900/80 p-6 shadow-xl shadow-black/40">
-        <p className="text-emerald-300">Loading check-in data...</p>
+        <div className="flex items-center gap-4">
+          {/* Animated scanner icon for detective-style loading state. */}
+          <div className="relative h-10 w-10">
+            <span className="absolute inset-0 rounded-full border-2 border-emerald-400/30" />
+            <span className="absolute inset-1 rounded-full border-2 border-emerald-300 border-t-transparent animate-spin" />
+          </div>
+          <div>
+            <p className="text-emerald-300">Kanıtlar taranıyor...</p>
+            <p className="text-sm text-slate-400">İzmir giriş kayıtları analiz ediliyor.</p>
+          </div>
+        </div>
+        {/* Pulsing progress bars for extra motion feedback. */}
+        <div className="mt-4 space-y-2">
+          <div className="h-2 w-full animate-pulse rounded bg-emerald-400/20" />
+          <div className="h-2 w-2/3 animate-pulse rounded bg-amber-300/20" />
+        </div>
       </section>
     )
   }
