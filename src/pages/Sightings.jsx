@@ -28,6 +28,15 @@ function parseCoordinates(value) {
   return { lat, lng }
 }
 
+// Parse "dd-mm-yyyy hh:mm" timestamps for reliable sorting.
+function parseSightingDate(value) {
+  const text = String(value ?? '').trim()
+  const match = text.match(/^(\d{2})-(\d{2})-(\d{4})\s+(\d{2}):(\d{2})$/)
+  if (!match) return null
+  const [, day, month, year, hour, minute] = match
+  return new Date(Number(year), Number(month) - 1, Number(day), Number(hour), Number(minute))
+}
+
 // Render a dedicated Sightings page with real Jotform data.
 function Sightings({ searchTerm = '' }) {
   const [sightings, setSightings] = useState([])
@@ -64,13 +73,24 @@ function Sightings({ searchTerm = '' }) {
     )
   }, [sightings, searchTerm])
 
-  // Keep only sightings that have valid coordinates.
+  // Sort sightings by latest timestamp first.
+  const sortedSightings = useMemo(
+    () =>
+      [...visibleSightings].sort((a, b) => {
+        const left = parseSightingDate(a.timestamp)?.getTime() ?? 0
+        const right = parseSightingDate(b.timestamp)?.getTime() ?? 0
+        return right - left
+      }),
+    [visibleSightings],
+  )
+
+  // Keep only sorted sightings that have valid coordinates.
   const sightingsWithCoords = useMemo(
     () =>
-      visibleSightings
+      sortedSightings
         .map((item) => ({ ...item, parsedCoords: parseCoordinates(item.coordinates) }))
         .filter((item) => item.parsedCoords),
-    [visibleSightings],
+    [sortedSightings],
   )
 
   // Use latest available coordinates as the preview map target.
@@ -124,7 +144,7 @@ function Sightings({ searchTerm = '' }) {
           )}
 
           <ul className="space-y-3">
-            {visibleSightings.map((item) => {
+            {sortedSightings.map((item) => {
               const parsed = parseCoordinates(item.coordinates)
               const mapsUrl = parsed
                 ? `https://www.openstreetmap.org/?mlat=${parsed.lat}&mlon=${parsed.lng}#map=16/${parsed.lat}/${parsed.lng}`
