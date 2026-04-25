@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { FORM_IDS, getSubmissions } from '../services/jotformService'
 
-// Normalize Checkins form answers into a list row.
+// Normalize Checkins form answers into a table row.
 function mapCheckinAnswerToRow(answers, index) {
   const answerList = Object.values(answers ?? {})
   const byFieldName = Object.fromEntries(
@@ -11,10 +11,9 @@ function mapCheckinAnswerToRow(answers, index) {
   return {
     id: index + 1,
     name: String(byFieldName.fullname?.answer ?? 'Unknown'),
-    location: String(byFieldName.location?.answer ?? 'Unknown'),
-    coordinates: String(byFieldName.coordinates?.answer ?? 'Unknown'),
     checkinTime: String(byFieldName.timestamp?.answer ?? 'Unknown'),
     note: String(byFieldName.note?.answer ?? '-'),
+    location: String(byFieldName.location?.answer ?? 'Unknown'),
   }
 }
 
@@ -41,11 +40,25 @@ function Dashboard() {
     loadCheckins()
   }, [])
 
+  // Match common Izmir locations used in check-in records.
+  const izmirKeywords = [
+    'izmir',
+    'konak',
+    'alsancak',
+    'karsiyaka',
+    'karşıyaka',
+    'bornova',
+    'bostanli',
+    'bostanlı',
+  ]
+
   // Keep only attendees that checked in from Izmir.
   const izmirCheckins = useMemo(
     () =>
       checkins.filter((row) =>
-        String(row.location).toLocaleLowerCase('tr-TR').includes('izmir'),
+        izmirKeywords.some((keyword) =>
+          String(row.location).toLocaleLowerCase('tr-TR').includes(keyword),
+        ),
       ),
     [checkins],
   )
@@ -60,8 +73,8 @@ function Dashboard() {
             <span className="absolute inset-1 rounded-full border-2 border-emerald-300 border-t-transparent animate-spin" />
           </div>
           <div>
-            <p className="text-emerald-300">Kanıtlar taranıyor...</p>
-            <p className="text-sm text-slate-400">İzmir giriş kayıtları analiz ediliyor.</p>
+            <p className="text-emerald-300">Loading...</p>
+            <p className="text-sm text-slate-400">Evidence records are being scanned.</p>
           </div>
         </div>
         {/* Pulsing progress bars for extra motion feedback. */}
@@ -93,25 +106,36 @@ function Dashboard() {
       {izmirCheckins.length === 0 ? (
         <p className="text-slate-300">No Izmir check-ins found yet.</p>
       ) : (
-        <ul className="space-y-3">
-          {izmirCheckins.map((row) => (
-            <li
-              key={row.id}
-              className="rounded-lg border border-slate-700 bg-slate-800/70 p-4 transition hover:border-amber-300/40"
-            >
-              <div className="flex flex-wrap items-center justify-between gap-2">
-                <p className="text-lg font-medium text-amber-200">{row.name}</p>
-                <p className="text-sm text-emerald-300">{row.checkinTime}</p>
-              </div>
-              <p className="mt-2 text-sm text-slate-300">
-                <span className="text-slate-400">Location:</span> {row.location}
-              </p>
-              <p className="mt-1 text-sm text-slate-300">
-                <span className="text-slate-400">Note:</span> {row.note || '-'}
-              </p>
-            </li>
-          ))}
-        </ul>
+        <div className="overflow-x-auto rounded-lg border border-slate-700">
+          <table className="min-w-full divide-y divide-slate-700">
+            <thead className="bg-slate-800/80">
+              <tr>
+                <th className="px-4 py-3 text-left text-xs uppercase tracking-wider text-slate-300">
+                  #
+                </th>
+                <th className="px-4 py-3 text-left text-xs uppercase tracking-wider text-slate-300">
+                  Suspect Name
+                </th>
+                <th className="px-4 py-3 text-left text-xs uppercase tracking-wider text-slate-300">
+                  Check-in Time
+                </th>
+                <th className="px-4 py-3 text-left text-xs uppercase tracking-wider text-slate-300">
+                  Note
+                </th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-700 bg-slate-900/50">
+              {izmirCheckins.map((row) => (
+                <tr key={row.id} className="transition hover:bg-slate-800/60">
+                  <td className="px-4 py-3 text-sm text-slate-300">{row.id}</td>
+                  <td className="px-4 py-3 text-sm font-medium text-amber-200">{row.name}</td>
+                  <td className="px-4 py-3 text-sm text-emerald-300">{row.checkinTime}</td>
+                  <td className="px-4 py-3 text-sm text-slate-300">{row.note || '-'}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       )}
     </section>
   )
