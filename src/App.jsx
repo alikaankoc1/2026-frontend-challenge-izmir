@@ -1,5 +1,6 @@
 import Dashboard from './pages/Dashboard'
 import Suspects from './pages/Suspects'
+import Tips from './pages/Tips'
 import { NavLink, Navigate, Route, Routes } from 'react-router-dom'
 
 // Render top-level routes for dashboard and suspects pages.
@@ -25,12 +26,16 @@ function App() {
           <NavLink to="/suspects" className={getNavClass}>
             Suspects
           </NavLink>
+          <NavLink to="/tips" className={getNavClass}>
+            Tips
+          </NavLink>
         </nav>
 
         <Routes>
           <Route path="/" element={<Navigate to="/dashboard" replace />} />
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/suspects" element={<Suspects />} />
+          <Route path="/tips" element={<Tips />} />
         </Routes>
       </div>
     </main>
