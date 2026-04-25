@@ -39,6 +39,12 @@ function getInitials(name) {
     .join('')
 }
 
+// Build a deterministic avatar URL so each suspect keeps a stable image.
+function getSuspectImageUrl(name) {
+  const seed = encodeURIComponent(String(name || 'unknown'))
+  return `https://api.dicebear.com/9.x/notionists-neutral/svg?seed=${seed}&backgroundColor=1e293b,0f172a,334155`
+}
+
 // Normalize Turkish characters and letter repeats for stable name matching.
 function normalizeNameForKey(name) {
   return String(name)
@@ -308,9 +314,21 @@ function Suspects({ searchTerm = '' }) {
               className="rounded-lg border border-slate-700 bg-slate-800/70 p-4"
               style={getScoreCardStyle(suspect.suspicionScore)}
             >
-              {/* Keep a photo placeholder until real suspect images are available. */}
-              <div className="flex aspect-[4/3] w-full items-center justify-center rounded-md border border-dashed border-emerald-400/40 bg-slate-900/70">
-                <span className="text-2xl font-semibold tracking-wider text-emerald-300">
+              {/* Render a unique suspect portrait while keeping initials as fallback. */}
+              <div className="relative aspect-[4/3] w-full overflow-hidden rounded-md border border-dashed border-emerald-400/40 bg-slate-900/70">
+                <img
+                  src={getSuspectImageUrl(suspect.name)}
+                  alt={`${suspect.name} profile`}
+                  className="h-full w-full object-cover"
+                  loading="lazy"
+                  referrerPolicy="no-referrer"
+                  onError={(event) => {
+                    event.currentTarget.style.display = 'none'
+                    const fallback = event.currentTarget.nextElementSibling
+                    if (fallback) fallback.classList.remove('hidden')
+                  }}
+                />
+                <span className="hidden absolute inset-0 flex items-center justify-center text-2xl font-semibold tracking-wider text-emerald-300">
                   {getInitials(suspect.name)}
                 </span>
               </div>
