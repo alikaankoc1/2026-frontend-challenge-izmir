@@ -1,4 +1,5 @@
 import Dashboard from './pages/Dashboard'
+import Sightings from './pages/Sightings'
 import Suspects from './pages/Suspects'
 import Tips from './pages/Tips'
 import { NavLink, Navigate, Route, Routes } from 'react-router-dom'
@@ -23,6 +24,9 @@ function App() {
           <NavLink to="/dashboard" className={getNavClass}>
             Dashboard
           </NavLink>
+          <NavLink to="/sightings" className={getNavClass}>
+            Sightings
+          </NavLink>
           <NavLink to="/suspects" className={getNavClass}>
             Suspects
           </NavLink>
@@ -34,6 +38,7 @@ function App() {
         <Routes>
           <Route path="/" element={<Navigate to="/dashboard" replace />} />
           <Route path="/dashboard" element={<Dashboard />} />
+          <Route path="/sightings" element={<Sightings />} />
           <Route path="/suspects" element={<Suspects />} />
           <Route path="/tips" element={<Tips />} />
         </Routes>
