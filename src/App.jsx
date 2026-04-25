@@ -20,9 +20,17 @@ function App() {
   return (
     <main className="min-h-screen bg-slate-950 text-slate-100">
       <div className="mx-auto max-w-5xl px-6 py-10">
-        <h1 className="mb-6 text-3xl font-bold tracking-wide text-amber-300">
-          Podo Search: Izmir Mystery
-        </h1>
+        <div className="mb-6 flex items-center gap-3">
+          {/* Display Podo mascot near the project title. */}
+          <img
+            src="/podo.png"
+            alt="Podo mascot"
+            className="h-14 w-14 rounded-full border border-amber-300/40 bg-slate-900/70 object-contain object-center p-0.5"
+          />
+          <h1 className="text-3xl font-bold tracking-wide text-amber-300">
+            Podo Search: Izmir Mystery
+          </h1>
+        </div>
 
         <nav className="mb-6 flex items-center gap-3">
           <NavLink to="/dashboard" className={getNavClass}>
