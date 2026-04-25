@@ -136,6 +136,31 @@ function calculateSuspicionScore(signal) {
   return Math.max(0, Math.min(100, rawScore))
 }
 
+// Convert score to a green->red color scale.
+function getScoreHue(score) {
+  const clamped = Math.max(0, Math.min(100, Number(score) || 0))
+  return 120 - (clamped / 100) * 120
+}
+
+// Build dynamic badge colors from the suspicion score.
+function getScoreBadgeStyle(score) {
+  const hue = getScoreHue(score)
+  return {
+    borderColor: `hsl(${hue} 80% 45% / 0.55)`,
+    backgroundColor: `hsl(${hue} 80% 45% / 0.16)`,
+    color: `hsl(${hue} 88% 72%)`,
+  }
+}
+
+// Build subtle card accent colors from the suspicion score.
+function getScoreCardStyle(score) {
+  const hue = getScoreHue(score)
+  return {
+    borderColor: `hsl(${hue} 75% 40% / 0.35)`,
+    boxShadow: `inset 0 0 0 1px hsl(${hue} 75% 40% / 0.14)`,
+  }
+}
+
 // Render suspect cards sourced from real Jotform forms.
 function Suspects({ searchTerm = '' }) {
   const [suspects, setSuspects] = useState([])
@@ -281,6 +306,7 @@ function Suspects({ searchTerm = '' }) {
             <article
               key={`${suspect.name}-${index}`}
               className="rounded-lg border border-slate-700 bg-slate-800/70 p-4"
+              style={getScoreCardStyle(suspect.suspicionScore)}
             >
               {/* Keep a photo placeholder until real suspect images are available. */}
               <div className="flex aspect-[4/3] w-full items-center justify-center rounded-md border border-dashed border-emerald-400/40 bg-slate-900/70">
@@ -289,19 +315,19 @@ function Suspects({ searchTerm = '' }) {
                 </span>
               </div>
               <p className="mt-3 text-sm font-medium text-amber-200">{suspect.name}</p>
-              <div className="mt-2 inline-flex items-center gap-2 rounded-md border border-emerald-400/30 bg-emerald-400/10 px-2 py-1">
+              <div
+                className="mt-2 inline-flex items-center gap-2 rounded-md border px-2 py-1"
+                style={getScoreBadgeStyle(suspect.suspicionScore)}
+              >
                 {/* Show weighted suspicion score computed from cross-form signals. */}
-                <span className="text-xs uppercase tracking-wider text-emerald-300">
-                  Suspicion Score
-                </span>
-                <span className="text-sm font-semibold text-emerald-200">
-                  {suspect.suspicionScore ?? 0}
-                </span>
+                <span className="text-xs uppercase tracking-wider">Suspicion Score</span>
+                <span className="text-sm font-semibold">{suspect.suspicionScore ?? 0}</span>
               </div>
+              {/* Keep signal counters visible for quick score interpretation. */}
+              <p className="mt-1 text-xs text-slate-400">Signals: {suspect.signalSummary}</p>
               <p className="mt-1 text-xs text-slate-400">Last Seen: {suspect.timestamp}</p>
               <p className="mt-2 text-sm text-slate-300">{suspect.note}</p>
               <p className="mt-2 text-xs text-emerald-300">Source: {suspect.source}</p>
-              <p className="mt-1 text-xs text-slate-400">Signals: {suspect.signalSummary}</p>
             </article>
           ))}
         </div>
