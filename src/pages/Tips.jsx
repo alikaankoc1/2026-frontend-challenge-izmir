@@ -50,6 +50,14 @@ function pickHigherConfidence(a, b) {
   return (rank[safeB] ?? 0) >= (rank[safeA] ?? 0) ? b : a
 }
 
+// Map confidence levels to semantic colors.
+function getConfidenceClass(confidence) {
+  const value = String(confidence).toLocaleLowerCase('tr-TR')
+  if (value === 'high') return 'text-rose-300'
+  if (value === 'medium') return 'text-amber-300'
+  return 'text-emerald-300'
+}
+
 // Render Anonymous Tips in the same visual language as other pages.
 function Tips({ searchTerm = '' }) {
   const [tips, setTips] = useState([])
@@ -166,7 +174,11 @@ function Tips({ searchTerm = '' }) {
             >
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <p className="text-sm font-medium text-amber-200">Suspect: {item.suspectName}</p>
-                <p className="text-xs uppercase tracking-wider text-emerald-300">
+                <p
+                  className={`text-xs uppercase tracking-wider ${getConfidenceClass(
+                    item.confidence,
+                  )}`}
+                >
                   Confidence: {item.confidence}
                 </p>
               </div>
