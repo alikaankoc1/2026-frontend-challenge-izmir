@@ -89,7 +89,41 @@ function calculateScores({ messages, notes, sightings, tips }) {
   return Array.from(scores.values()).sort((a, b) => b.score - a.score)
 }
 
-// Render phase-1 prime suspect summary panel.
+// Convert score gap to an explainable confidence percentage.
+function calculateConfidence(topScore, secondScore) {
+  const safeTop = Number(topScore) || 0
+  const safeSecond = Number(secondScore) || 0
+  const gap = Math.max(0, safeTop - safeSecond)
+  const confidence = 55 + Math.min(40, gap * 2.5)
+  return Math.max(55, Math.min(95, Math.round(confidence)))
+}
+
+// Build human-readable reasons from signal counters.
+function buildReasonBullets(signals) {
+  const bullets = []
+
+  if (signals.tipsHigh > 0) {
+    bullets.push(`Received ${signals.tipsHigh} high-confidence anonymous tip(s).`)
+  }
+  if (signals.sightings > 0) {
+    bullets.push(`Appears in ${signals.sightings} sighting report(s).`)
+  }
+  if (signals.messages > 0) {
+    bullets.push(`Linked to ${signals.messages} message record(s).`)
+  }
+  if (signals.notes > 0) {
+    bullets.push(`Mentioned in ${signals.notes} personal note(s).`)
+  }
+  if (signals.tipsMedium + signals.tipsLow > 0) {
+    bullets.push(
+      `Has ${signals.tipsMedium + signals.tipsLow} additional medium/low confidence tip(s).`,
+    )
+  }
+
+  return bullets.slice(0, 4)
+}
+
+// Render phase-2 prime suspect summary panel.
 function PrimeSuspect({ searchTerm = '' }) {
   const [rankedSuspects, setRankedSuspects] = useState([])
   const [loading, setLoading] = useState(true)
@@ -126,6 +160,7 @@ function PrimeSuspect({ searchTerm = '' }) {
   }, [rankedSuspects, searchTerm])
 
   const topSuspect = visibleSuspects[0]
+  const secondSuspect = visibleSuspects[1]
 
   if (loading) {
     return (
@@ -145,24 +180,42 @@ function PrimeSuspect({ searchTerm = '' }) {
 
   return (
     <section className="rounded-xl border border-red-400/30 bg-slate-900/80 p-6 shadow-2xl shadow-black/50">
-      <h2 className="text-2xl font-semibold text-red-300">Prime Suspect (Phase 1)</h2>
+      <h2 className="text-2xl font-semibold text-red-300">Prime Suspect (Phase 2)</h2>
       {!topSuspect ? (
         <p className="mt-3 text-slate-300">No suspect found for this search.</p>
       ) : (
         <div className="mt-4 rounded-lg border border-red-300/30 bg-red-400/10 p-4">
-          <p className="text-sm uppercase tracking-wider text-red-200">Top Candidate</p>
-          <p className="mt-1 text-2xl font-bold text-amber-200">{topSuspect.name}</p>
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <p className="text-sm uppercase tracking-wider text-red-200">Top Candidate</p>
+              <p className="mt-1 text-2xl font-bold text-amber-200">{topSuspect.name}</p>
+            </div>
+            <div className="rounded-md border border-amber-300/40 bg-amber-300/10 px-3 py-2">
+              <p className="text-xs uppercase tracking-wider text-amber-100">Confidence</p>
+              <p className="text-xl font-semibold text-amber-200">
+                {calculateConfidence(topSuspect.score, secondSuspect?.score)}%
+              </p>
+            </div>
+          </div>
+
           <p className="mt-2 text-sm text-slate-200">Suspicion Score: {topSuspect.score}</p>
           <p className="mt-2 text-xs text-slate-300">
             Signals - M:{topSuspect.signals.messages} N:{topSuspect.signals.notes} S:
             {topSuspect.signals.sightings} T:
             {topSuspect.signals.tipsHigh + topSuspect.signals.tipsMedium + topSuspect.signals.tipsLow}
           </p>
+
+          <div className="mt-3">
+            <p className="text-xs uppercase tracking-wider text-slate-300">Why this suspect?</p>
+            <ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-slate-200">
+              {buildReasonBullets(topSuspect.signals).map((bullet) => (
+                <li key={bullet}>{bullet}</li>
+              ))}
+            </ul>
+          </div>
         </div>
       )}
-      <p className="mt-4 text-xs text-slate-400">
-        Next phase: add explainable reason bullets and confidence percentage.
-      </p>
+      <p className="mt-4 text-xs text-slate-400">Next phase: add top-5 ranking and impact simulation.</p>
     </section>
   )
 }
