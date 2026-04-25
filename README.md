@@ -1,31 +1,27 @@
-# Jotform Frontend Challenge Project
-
-## User Information
+Jotform Frontend Challenge Project
+User Information
 Please fill in your information after forking this repository:
 
-- **Name**: [Your Name]
-
-## Project Description
+Name: [Your Name]
+Project Description
 [Add a brief description of your project here]
 
-## Getting Started
+Getting Started
 [Add instructions for setting up and running the project]
 
-# 🚀 Challenge Duyurusu
-
-## 📅 Tarih ve Saat
+🚀 Challenge Duyurusu
+📅 Tarih ve Saat
 Cumartesi günü başlama saatinden itibaren üç saattir.
 
-## 🎯 Challenge Konsepti
+🎯 Challenge Konsepti
 Bu challenge'da, size özel hazırlanmış bir senaryo üzerine web uygulaması geliştirmeniz istenecektir. Challenge başlangıcında senaryo detayları paylaşılacaktır.Katılımcılar, verilen GitHub reposunu fork ederek kendi geliştirme ortamlarını oluşturacaklardır.
 
-## 📦 GitHub Reposu
+📦 GitHub Reposu
 Challenge için kullanılacak repo: https://github.com/cemjotform/2026-frontend-challenge-izmir
 
-## 🛠️ Hazırlık Süreci
-1. GitHub reposunu fork edin
-2. Tercih ettiğiniz framework ile geliştirme ortamınızı hazırlayın
-3. Hazırladığınız setup'ı fork ettiğiniz repoya gönderin
-
-## 💡 Önemli Notlar
-- Katılımcılar kendi tercih ettikleri framework'leri kullanabilirler
+🛠️ Hazırlık Süreci
+GitHub reposunu fork edin
+Tercih ettiğiniz framework ile geliştirme ortamınızı hazırlayın
+Hazırladığınız setup'ı fork ettiğiniz repoya gönderin
+💡 Önemli Notlar
+Katılımcılar kendi tercih ettikleri framework'leri kullanabilirler
