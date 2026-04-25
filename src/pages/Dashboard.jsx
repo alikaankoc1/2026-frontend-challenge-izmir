@@ -17,7 +17,7 @@ function mapCheckinAnswerToRow(answers, index) {
   }
 }
 
-function Dashboard() {
+function Dashboard({ searchTerm = '' }) {
   const [checkins, setCheckins] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
@@ -62,6 +62,19 @@ function Dashboard() {
     [checkins],
   )
 
+  // Apply global text filtering on already normalized check-in rows.
+  const visibleCheckins = useMemo(() => {
+    const query = searchTerm.trim().toLocaleLowerCase('tr-TR')
+    if (!query) return izmirCheckins
+
+    return izmirCheckins.filter((row) =>
+      [row.name, row.checkinTime, row.note, row.location]
+        .join(' ')
+        .toLocaleLowerCase('tr-TR')
+        .includes(query),
+    )
+  }, [izmirCheckins, searchTerm])
+
   if (loading) {
     return (
       <section className="rounded-xl border border-emerald-500/30 bg-slate-900/80 p-6 shadow-xl shadow-black/40">
@@ -98,11 +111,11 @@ function Dashboard() {
       <div className="mb-5 flex items-center justify-between gap-4 border-b border-slate-700 pb-4">
         <h2 className="text-2xl font-semibold text-amber-300">İzmir Partisi Giriş Kayıtları</h2>
         <span className="rounded-md border border-emerald-400/30 bg-emerald-400/10 px-3 py-1 text-sm text-emerald-300">
-          Total: {izmirCheckins.length}
+          Total: {visibleCheckins.length}
         </span>
       </div>
 
-      {izmirCheckins.length === 0 ? (
+      {visibleCheckins.length === 0 ? (
         <p className="text-slate-300">No Izmir check-ins found yet.</p>
       ) : (
         <div className="overflow-x-auto rounded-lg border border-slate-700">
@@ -124,7 +137,7 @@ function Dashboard() {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-700 bg-slate-900/50">
-              {izmirCheckins.map((row, index) => (
+              {visibleCheckins.map((row, index) => (
                 <tr key={row.id} className="transition hover:bg-slate-800/60">
                   {/* Render sequence based on filtered rows for a continuous 1..N index. */}
                   <td className="px-4 py-3 text-sm text-slate-300">{index + 1}</td>

@@ -65,7 +65,7 @@ function formatDisplayName(name) {
 }
 
 // Render suspect cards sourced from real Jotform forms.
-function Suspects() {
+function Suspects({ searchTerm = '' }) {
   const [suspects, setSuspects] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
@@ -141,6 +141,19 @@ function Suspects() {
     [suspects],
   )
 
+  // Apply global text filtering across suspect card fields.
+  const visibleSuspects = useMemo(() => {
+    const query = searchTerm.trim().toLocaleLowerCase('tr-TR')
+    if (!query) return sortedSuspects
+
+    return sortedSuspects.filter((suspect) =>
+      [suspect.name, suspect.timestamp, suspect.note, suspect.source]
+        .join(' ')
+        .toLocaleLowerCase('tr-TR')
+        .includes(query),
+    )
+  }, [sortedSuspects, searchTerm])
+
   if (loading) {
     return (
       <section className="rounded-xl border border-emerald-500/30 bg-slate-900/80 p-6 shadow-2xl shadow-black/50">
@@ -166,11 +179,11 @@ function Suspects() {
         </p>
       </div>
 
-      {sortedSuspects.length === 0 ? (
+      {visibleSuspects.length === 0 ? (
         <p className="text-slate-300">No suspect profile data found yet.</p>
       ) : (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {sortedSuspects.map((suspect, index) => (
+          {visibleSuspects.map((suspect, index) => (
             <article
               key={`${suspect.name}-${index}`}
               className="rounded-lg border border-slate-700 bg-slate-800/70 p-4"

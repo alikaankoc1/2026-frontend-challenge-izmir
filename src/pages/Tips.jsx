@@ -51,7 +51,7 @@ function pickHigherConfidence(a, b) {
 }
 
 // Render Anonymous Tips in the same visual language as other pages.
-function Tips() {
+function Tips({ searchTerm = '' }) {
   const [tips, setTips] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
@@ -117,6 +117,19 @@ function Tips() {
     [tips],
   )
 
+  // Apply global text filtering on merged tip cards.
+  const visibleTips = useMemo(() => {
+    const query = searchTerm.trim().toLocaleLowerCase('tr-TR')
+    if (!query) return orderedTips
+
+    return orderedTips.filter((item) =>
+      [item.suspectName, item.location, item.timestamp, item.tip, item.confidence]
+        .join(' ')
+        .toLocaleLowerCase('tr-TR')
+        .includes(query),
+    )
+  }, [orderedTips, searchTerm])
+
   if (loading) {
     return (
       <section className="rounded-xl border border-emerald-500/30 bg-slate-900/80 p-6 shadow-2xl shadow-black/50">
@@ -138,15 +151,15 @@ function Tips() {
       <div className="mb-5 flex items-center justify-between gap-4 border-b border-slate-700 pb-4">
         <h2 className="text-2xl font-semibold text-amber-300">Anonymous Tips</h2>
         <span className="rounded-md border border-emerald-400/30 bg-emerald-400/10 px-3 py-1 text-sm text-emerald-300">
-          Total: {orderedTips.length}
+          Total: {visibleTips.length}
         </span>
       </div>
 
-      {orderedTips.length === 0 ? (
+      {visibleTips.length === 0 ? (
         <p className="text-slate-300">No anonymous tips found yet.</p>
       ) : (
         <ul className="space-y-3">
-          {orderedTips.map((item) => (
+          {visibleTips.map((item) => (
             <li
               key={item.id}
               className="rounded-lg border border-slate-700 bg-slate-800/70 p-4 transition hover:border-amber-300/40"

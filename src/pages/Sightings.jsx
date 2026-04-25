@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { FORM_IDS, getSubmissions } from '../services/jotformService'
 
 // Normalize Sightings form answers into a simple list row.
@@ -17,7 +17,7 @@ function mapSightingAnswerToRow(answers, index) {
 }
 
 // Render a dedicated Sightings page with real Jotform data.
-function Sightings() {
+function Sightings({ searchTerm = '' }) {
   const [sightings, setSightings] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
@@ -38,6 +38,19 @@ function Sightings() {
 
     loadSightings()
   }, [])
+
+  // Apply global text filtering across location, time, and note fields.
+  const visibleSightings = useMemo(() => {
+    const query = searchTerm.trim().toLocaleLowerCase('tr-TR')
+    if (!query) return sightings
+
+    return sightings.filter((item) =>
+      [item.location, item.timestamp, item.note]
+        .join(' ')
+        .toLocaleLowerCase('tr-TR')
+        .includes(query),
+    )
+  }, [sightings, searchTerm])
 
   if (loading) {
     return (
@@ -60,15 +73,15 @@ function Sightings() {
       <div className="mb-5 flex items-center justify-between gap-4 border-b border-slate-700 pb-4">
         <h2 className="text-2xl font-semibold text-emerald-300">Sightings</h2>
         <span className="rounded-md border border-amber-300/30 bg-amber-300/10 px-3 py-1 text-sm text-amber-200">
-          Total: {sightings.length}
+          Total: {visibleSightings.length}
         </span>
       </div>
 
-      {sightings.length === 0 ? (
+      {visibleSightings.length === 0 ? (
         <p className="text-slate-300">No sightings records found yet.</p>
       ) : (
         <ul className="space-y-3">
-          {sightings.map((item) => (
+          {visibleSightings.map((item) => (
             <li key={item.id} className="rounded-lg border border-slate-700 bg-slate-800/70 p-4">
               <p className="text-sm text-slate-300">
                 <span className="text-slate-400">Görüldüğü Yer:</span> {item.location}

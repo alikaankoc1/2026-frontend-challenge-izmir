@@ -2,10 +2,13 @@ import Dashboard from './pages/Dashboard'
 import Sightings from './pages/Sightings'
 import Suspects from './pages/Suspects'
 import Tips from './pages/Tips'
+import { useState } from 'react'
 import { NavLink, Navigate, Route, Routes } from 'react-router-dom'
 
 // Render top-level routes for dashboard and suspects pages.
 function App() {
+  const [searchTerm, setSearchTerm] = useState('')
+
   const getNavClass = ({ isActive }) =>
     `rounded-md border px-3 py-1 text-sm transition ${
       isActive
@@ -35,12 +38,23 @@ function App() {
           </NavLink>
         </nav>
 
+        <div className="mb-6">
+          {/* Keep one global search input shared by all pages. */}
+          <input
+            type="search"
+            value={searchTerm}
+            onChange={(event) => setSearchTerm(event.target.value)}
+            placeholder="Global search: name, location, note, tip..."
+            className="w-full rounded-md border border-slate-700 bg-slate-900/80 px-4 py-2 text-sm text-slate-200 outline-none transition placeholder:text-slate-500 focus:border-amber-300/60"
+          />
+        </div>
+
         <Routes>
           <Route path="/" element={<Navigate to="/dashboard" replace />} />
-          <Route path="/dashboard" element={<Dashboard />} />
-          <Route path="/sightings" element={<Sightings />} />
-          <Route path="/suspects" element={<Suspects />} />
-          <Route path="/tips" element={<Tips />} />
+          <Route path="/dashboard" element={<Dashboard searchTerm={searchTerm} />} />
+          <Route path="/sightings" element={<Sightings searchTerm={searchTerm} />} />
+          <Route path="/suspects" element={<Suspects searchTerm={searchTerm} />} />
+          <Route path="/tips" element={<Tips searchTerm={searchTerm} />} />
         </Routes>
       </div>
     </main>
