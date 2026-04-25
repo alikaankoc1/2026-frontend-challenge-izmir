@@ -1,28 +1,20 @@
 import { useEffect, useMemo, useState } from 'react'
 import { FORM_IDS, getSubmissions } from '../services/jotformService'
 
-// Normalize raw Jotform answers into a list row.
+// Normalize Checkins form answers into a table row.
 function mapCheckinAnswerToRow(answers, index) {
   const answerList = Object.values(answers ?? {})
-
-  const findByQuestion = (patterns) =>
-    answerList.find((item) =>
-      patterns.some((pattern) =>
-        String(item?.text ?? '')
-          .toLowerCase()
-          .includes(pattern),
-      ),
-    )
-
-  const nameField = findByQuestion(['name', 'full name', 'ad', 'isim', 'soyad'])
-  const cityField = findByQuestion(['city', 'şehir', 'sehir', 'location', 'konum'])
-  const timeField = findByQuestion(['time', 'saat', 'date', 'tarih'])
+  const byFieldName = Object.fromEntries(
+    answerList.map((item) => [String(item?.text ?? '').toLowerCase(), item]),
+  )
 
   return {
     id: index + 1,
-    name: String(nameField?.answer ?? 'Unknown'),
-    city: String(cityField?.answer ?? 'Unknown'),
-    checkinTime: String(timeField?.answer ?? 'Unknown'),
+    name: String(byFieldName.fullname?.answer ?? 'Unknown'),
+    location: String(byFieldName.location?.answer ?? 'Unknown'),
+    coordinates: String(byFieldName.coordinates?.answer ?? 'Unknown'),
+    checkinTime: String(byFieldName.timestamp?.answer ?? 'Unknown'),
+    note: String(byFieldName.note?.answer ?? '-'),
   }
 }
 
@@ -53,7 +45,7 @@ function Dashboard() {
   const izmirCheckins = useMemo(
     () =>
       checkins.filter((row) =>
-        String(row.city).toLocaleLowerCase('tr-TR').includes('izmir'),
+        String(row.location).toLocaleLowerCase('tr-TR').includes('izmir'),
       ),
     [checkins],
   )
@@ -69,22 +61,32 @@ function Dashboard() {
   return (
     <section>
       <h2>Check-ins in Izmir</h2>
+      <p>Total entries: {izmirCheckins.length}</p>
       <table>
         <thead>
           <tr>
             <th>#</th>
             <th>Name</th>
-            <th>City</th>
+            <th>Location</th>
+            <th>Coordinates</th>
             <th>Check-in Time</th>
+            <th>Note</th>
           </tr>
         </thead>
         <tbody>
+          {izmirCheckins.length === 0 && (
+            <tr>
+              <td colSpan={6}>No Izmir check-ins found yet.</td>
+            </tr>
+          )}
           {izmirCheckins.map((row) => (
             <tr key={row.id}>
               <td>{row.id}</td>
               <td>{row.name}</td>
-              <td>{row.city}</td>
+              <td>{row.location}</td>
+              <td>{row.coordinates}</td>
               <td>{row.checkinTime}</td>
+              <td>{row.note}</td>
             </tr>
           ))}
         </tbody>
