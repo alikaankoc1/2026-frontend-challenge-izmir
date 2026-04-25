@@ -98,6 +98,29 @@ function calculateConfidence(topScore, secondScore) {
   return Math.max(55, Math.min(95, Math.round(confidence)))
 }
 
+// Recalculate score after disabling one selected signal type.
+function calculateSimulatedScore(signals, disabledSignal) {
+  const weights = {
+    messages: 8,
+    notes: 6,
+    sightings: 10,
+    tipsHigh: 20,
+    tipsMedium: 12,
+    tipsLow: 6,
+  }
+
+  let score = 0
+  if (disabledSignal !== 'messages') score += signals.messages * weights.messages
+  if (disabledSignal !== 'notes') score += signals.notes * weights.notes
+  if (disabledSignal !== 'sightings') score += signals.sightings * weights.sightings
+  if (disabledSignal !== 'tips') {
+    score += signals.tipsHigh * weights.tipsHigh
+    score += signals.tipsMedium * weights.tipsMedium
+    score += signals.tipsLow * weights.tipsLow
+  }
+  return score
+}
+
 // Build human-readable reasons from signal counters.
 function buildReasonBullets(signals) {
   const bullets = []
@@ -128,6 +151,7 @@ function PrimeSuspect({ searchTerm = '' }) {
   const [rankedSuspects, setRankedSuspects] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
+  const [disabledSignal, setDisabledSignal] = useState('none')
 
   useEffect(() => {
     // Fetch all relevant forms for the initial prime suspect calculation.
@@ -162,6 +186,19 @@ function PrimeSuspect({ searchTerm = '' }) {
   const topSuspect = visibleSuspects[0]
   const secondSuspect = visibleSuspects[1]
   const topFive = visibleSuspects.slice(0, 5)
+
+  // Simulate ranking impact when one signal type is removed.
+  const simulatedTopFive = useMemo(() => {
+    if (disabledSignal === 'none') return topFive
+
+    return visibleSuspects
+      .map((item) => ({
+        ...item,
+        simulatedScore: calculateSimulatedScore(item.signals, disabledSignal),
+      }))
+      .sort((a, b) => b.simulatedScore - a.simulatedScore)
+      .slice(0, 5)
+  }, [visibleSuspects, disabledSignal, topFive])
 
   if (loading) {
     return (
@@ -230,6 +267,44 @@ function PrimeSuspect({ searchTerm = '' }) {
                     {idx + 1}. {item.name}
                   </span>
                   <span className="text-sm font-semibold text-amber-200">{item.score}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          {/* Let judges test how ranking changes without one signal type. */}
+          <div className="rounded-lg border border-cyan-300/30 bg-cyan-400/10 p-4">
+            <p className="text-xs uppercase tracking-wider text-cyan-200">Impact Simulation</p>
+            <div className="mt-2 flex items-center gap-2">
+              <label htmlFor="impact-signal" className="text-sm text-slate-200">
+                Disable signal:
+              </label>
+              <select
+                id="impact-signal"
+                value={disabledSignal}
+                onChange={(event) => setDisabledSignal(event.target.value)}
+                className="rounded border border-slate-600 bg-slate-900 px-2 py-1 text-sm text-slate-200"
+              >
+                <option value="none">None</option>
+                <option value="messages">Messages</option>
+                <option value="notes">Personal Notes</option>
+                <option value="sightings">Sightings</option>
+                <option value="tips">Anonymous Tips</option>
+              </select>
+            </div>
+
+            <ul className="mt-3 space-y-2">
+              {simulatedTopFive.map((item, idx) => (
+                <li
+                  key={`sim-${item.name}-${idx}`}
+                  className="flex items-center justify-between rounded border border-cyan-300/20 bg-slate-900/50 px-3 py-2"
+                >
+                  <span className="text-sm text-slate-200">
+                    {idx + 1}. {item.name}
+                  </span>
+                  <span className="text-sm font-semibold text-cyan-200">
+                    {disabledSignal === 'none' ? item.score : item.simulatedScore}
+                  </span>
                 </li>
               ))}
             </ul>
